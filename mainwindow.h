@@ -57,7 +57,14 @@ private:
     bool isDay;
     bool enableOutDoorLight;
     bool enableInDoorLight;
+    bool isOutLight;
+    bool isInLight;
     bool isBlind;
+
+    //instructions
+    bool instrOutLight;
+    bool instrInLight;
+    bool instrBlind;
 };
 
 #endif // MAINWINDOW_H
