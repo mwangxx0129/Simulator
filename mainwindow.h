@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QtNetwork>
 #include <QMainWindow>
 #include "sun.h"
 #include "grass.h"
@@ -12,8 +13,7 @@
 namespace Ui {
 class MainWindow;
 }
-class Sender;
-class Receiver;
+
 class Room;
 
 class MainWindow : public QMainWindow
@@ -24,7 +24,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void Generate();//TODO
-    void ReceiveInstructions();//TODO
+    void DealInstructions(QString messages);
     void SendInfo();//TODO
     void initHouse();
     void dealHouse();
@@ -33,14 +33,16 @@ public slots:
     void timeOutDeal();
 
 private slots:
-    void on_actionSpeed_up_triggered();
-
-    void on_actionSlow_down_triggered();
+    void acceptConnection();
+    void readClient();
 
 private:
     Ui::MainWindow *ui;
-    Sender *sender;
-    Receiver *receiver;
+
+    //TCP
+    QTcpServer *server;
+    QTcpSocket *clientConnection;
+
     QTimer *timer;
     int timerInterval;
 

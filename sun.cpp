@@ -22,7 +22,8 @@ void Sun::paintEvent(QPaintEvent *)
     painter.setBrush(Qt::yellow);
     painter.save();
 //    painter.drawEllipse(QPoint(-350* qCos(1.5), -350*qSin(1.5)), 20,20);
-    painter.drawEllipse(QPoint(0,0), 30,30);
+    if(pos.y()<0)
+        painter.drawEllipse(QPoint(0,0), 30,30);
     painter.restore();
     this->move(pos);
 }

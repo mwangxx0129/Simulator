@@ -22,10 +22,10 @@ void Window::paintEvent(QPaintEvent *)
     painter.translate(width() / 2, height() / 2);
     painter.setPen(QColor((124,252,0)));
 
-    if(isLight)
-        painter.setBrush(Qt::yellow);
-    else if(isBlind && isDay)
+    if(isBlind && isDay)
         painter.setBrush(Qt::white);
+    else if(isLight && !isDay)
+        painter.setBrush(Qt::yellow);
     else
         painter.setBrush(QColor(30,30,30));
     painter.save();

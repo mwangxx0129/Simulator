@@ -1,4 +1,6 @@
 #include <QTimer>
+#include <QJsonObject>
+#include <QJsonDocument>
 #include "house.h"
 
 #include "sender.h"
@@ -12,16 +14,19 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowTitle("Simulator");
-    sender = new Sender(45455); //45455 as sender port
-    receiver = new Receiver(45453); //45453 as receiver port
 
     initHouse();
-
     timer = new QTimer(this);
-    timerInterval = 100;
+    timerInterval = 1000;
     timer->start(timerInterval); // update time
     connect(timer, SIGNAL(timeout()), this, SLOT(timeOutDeal()));
 
+    // init server
+    server = new QTcpServer();
+    server->listen(QHostAddress::Any,6663); // (IP, port) will be changed
+    connect(server, SIGNAL(newConnection()), this, SLOT(acceptConnection()));
+
+    // init server
 }
 
 MainWindow::~MainWindow()
@@ -29,17 +34,67 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::ReceiveInstructions()
+//!------DO NOT REVISE BELOW---------------------------------------------------|
+void MainWindow::acceptConnection()
 {
-    //ui->label->setText(receiver->processPendingDatagrams().data());
+    clientConnection = server->nextPendingConnection();
+    connect(clientConnection, SIGNAL(readyRead()), this, SLOT(readClient()));
+}
+
+void MainWindow::readClient()
+{
+    QString messages = clientConnection->readAll();
+    DealInstructions(messages);
+}
+
+//!------DO NOT REVISE ABOVE---------------------------------------------------|
+
+void MainWindow::DealInstructions(QString messages)
+{
+    // deal json
+    QByteArray content;
+    content.append(messages);
+    QJsonDocument itemDoc = QJsonDocument::fromJson(content);
+    QJsonObject rootObject = itemDoc.object();
+
+    if(rootObject.isEmpty())
+        return;
+    instrOutLight = rootObject.value("instrOutLight").toBool();
+    instrInLight =  rootObject.value("instrInLight").toBool();
+    instrBlind = rootObject.value("instrBlind").toBool();
+    isBlind = instrBlind;
+
+    for(int i = 0; i<6; i++){
+        windows[i]->adjustBlind(instrBlind);
+        windows[i]->adjustLight(instrInLight);
+    }
+
+
+    light->adjustColor(instrOutLight);
+
 }
 
 void MainWindow::SendInfo()
 {
-    QString body = "is Sunday" +QString::number(isDay)
-            +"out Door Light Open"+ QString::number(enableOutDoorLight);
+    // Generate JSON
+    QJsonObject bodyJson{
+        {"isDay", isDay},
+        {"enableOutDoorLight",enableOutDoorLight},
+        {"enableInDoorLight", enableInDoorLight},
+        {"isOutLight",isOutLight},
+        {"isInLight",isInLight},
+        {"isBlind",isBlind}
+    };
+    QJsonDocument doc(bodyJson);
+    QString strJson(doc.toJson(QJsonDocument::Indented));
 
-    sender->broadcastDatagram(body);
+    // Create TCP sender
+    QTcpSocket * client;
+    client = new QTcpSocket(this);
+    client->connectToHost(QHostAddress("192.168.1.125"), 6667); // Send to (IP, PORT)
+    QByteArray message;
+    message.append(strJson);
+    client->write(message);
 }
 
 void MainWindow::initHouse()
@@ -77,6 +132,9 @@ void MainWindow::initHouse()
     sunAngle = 0;
     enableOutDoorLight = true;
     enableInDoorLight = true;
+    isOutLight = false;
+    isInLight = false;
+    isBlind = false;
 }
 
 void MainWindow::dealHouse()
@@ -98,31 +156,16 @@ void MainWindow::dealHouse()
 
 void MainWindow::timeOutDeal()
 {
-    //1. Generate
-    dealHouse();//simulator info,
+    //1. Generate simulator info
+    dealHouse();
 
     //2. Send info to Sever
     SendInfo();
 
     //3. Receive info from Sever
-    ReceiveInstructions();
+//    ReceiveInstructions();
 
     //4. Deal instructions
 }
 
 
-void MainWindow::on_actionSpeed_up_triggered()
-{
-    timerInterval -=10;
-    if(timerInterval <=30)
-        timerInterval = 30;
-    timer->start(timerInterval);
-}
-
-void MainWindow::on_actionSlow_down_triggered()
-{
-    timerInterval +=10;
-    if(timerInterval >=2000)
-        timerInterval = 2000;
-    timer->start(timerInterval);
-}
