@@ -91,7 +91,7 @@ void MainWindow::SendInfo()
     // Create TCP sender
     QTcpSocket * client;
     client = new QTcpSocket(this);
-    client->connectToHost(QHostAddress("192.168.1.125"), 6667); // Send to (IP, PORT)
+    client->connectToHost(QHostAddress("134.154.68.218"), 6667); // Send to (IP, PORT)
     QByteArray message;
     message.append(strJson);
     client->write(message);
@@ -105,6 +105,7 @@ void MainWindow::initHouse()
     grass = new Grass(this, QPoint(0,0),
                       QPoint(-380,0),QPoint(-380,200),
                       QPoint(380,200),QPoint(380,0),true);
+    //tree = new Tree(this);
     room = new Room(this,true);
 
     windows[0] = new Window(this,QPoint(-180,-180),
